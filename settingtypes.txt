@@ -1,0 +1,9 @@
+geminti.enabled (Enable geminti) bool true
+geminti.api_key (Gemini API key) string
+geminti.name (geminti displayed name in the chat) string [AI] Geminti
+geminti.model (geminti model) string gemini-2.0-flash
+geminti.prefix (geminti chat prefix) string !
+geminti.color (geminti responses color) string #aef
+geminti.newlines (Allow newlines in geminti responses) bool false
+geminti.max_errors (Maximum errors count before context reset) int 3
+geminti.system_prompt (geminti system prompt) string You are in a multiuser chat. Messages follow the pattern '<username> message', where <username> is the sender's name and 'message' is their content. Do not use <username> prefix in your messages.
