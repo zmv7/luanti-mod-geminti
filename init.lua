@@ -139,6 +139,7 @@ local dd_helper = {
 }
 
 local function geminti_chatedit(name)
+	if not next(chat) then return false, "Chat history is empty" end
 	local out = {}
 	for _, msg in ipairs(chat) do
 		table.insert(out, F(msg.role)..","..F(msg.parts[1].text):gsub("\n"," "))
@@ -176,6 +177,10 @@ core.register_on_player_receive_fields(function(player, fname, fields)
 	end
 	if fields.del then
 		table.remove(chat, sel)
+		if not next(chat) then
+			core.close_formspec(name, "geminti_chatedit")
+			return
+		end
 	end
 	if fields.moveup and sel > 1 then
 		chat[sel], chat[sel-1] = chat[sel-1], chat[sel]
