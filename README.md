@@ -1,6 +1,7 @@
 # luanti-mod-geminti
 
 ## Setup
+* Add `geminti` to `secure.http_mods` in minetest.conf (NECESSARY)
 * Provide your gemini API key into minetest.conf (`geminti.api_key`) (NECESSARY)
 * Adjust following settings to meet your needs (optional):
 
