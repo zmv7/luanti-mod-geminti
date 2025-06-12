@@ -23,6 +23,12 @@ local function store_chat()
 end
 core.register_on_shutdown(store_chat)
 
+local function reset()
+	chat = {}
+	store_chat()
+	selected_ids = {}
+end
+
 local function geminti_chat(callback, with_context)
 	http.fetch({
 		url = "https://generativelanguage.googleapis.com/v1beta/models/"..(st:get("geminti.model") or "gemini-2.0-flash")..":generateContent?key="..st:get("geminti.api_key"),
@@ -52,18 +58,13 @@ local function geminti_chat(callback, with_context)
 			local msg = "-!- Geminti: something went wrong: no content!"
 			if errors_count > (tonumber(st:get("geminti.max_errors")) or 3) then
 				reset()
+				errors_count = 0
 				msg = "-!- Geminti: errors limit exceeded, context has been reset"
 			end
 			core.chat_send_all(msg)
 			core.log("error",msg)
 		end
 	end)
-end
-
-local function reset()
-	chat = {}
-	store_chat()
-	selected_ids = {}
 end
 
 core.register_chatcommand("resetgeminti",{
