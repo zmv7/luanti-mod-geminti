@@ -111,7 +111,7 @@ local function geminti_on_chat_msg(name, msg)
 	if msg:match("^"..prefix.."%S+") then
 		msg = msg:sub(#prefix+1)
 		reply = true
-	elseif msg:match((st:get("geminti.name") or "Geminti"):lower()) then
+	elseif msg:lower():match((st:get("geminti.name") or "Geminti"):lower()) then
 		reply = true
 	else
 		for _,word in ipairs(callwords) do
