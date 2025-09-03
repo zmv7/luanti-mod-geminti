@@ -93,7 +93,11 @@ local callwords = {
 
 local function geminti_on_chat_msg(name, msg)
 	if not enabled then return end
-	msg = core.strip_colors(msg)
+	msg = core.strip_colors(msg):trim()
+	if st:get("geminti.strip_urls") then
+		msg = msg:gsub("https?://%S+",""):trim()
+	end
+	if not msg or msg == "" then return end
 	table.insert(chat, {
 		role = "user",
 		parts = {
