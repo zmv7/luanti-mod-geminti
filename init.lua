@@ -31,7 +31,7 @@ end
 
 local function geminti_chat(callback, with_context)
 	http.fetch({
-		url = "https://generativelanguage.googleapis.com/v1beta/models/"..(st:get("geminti.model") or "gemini-2.0-flash")..":generateContent?key="..st:get("geminti.api_key"),
+		url = "https://generativelanguage.googleapis.com/v1beta/models/"..(st:get("geminti.model") or "gemini-2.5-flash-lite")..":generateContent?key="..st:get("geminti.api_key"),
 		method = "POST",
 		extra_headers = {"Content-Type: application/json"},
 		data = core.write_json({
@@ -80,8 +80,8 @@ core.register_chatcommand("togglegeminti",{
 	description = "Toggle geminti functionality",
 	func = function(name, param)
 		enabled = not enabled
-		st:set_bool("geminti_enabled", enabled)
-		return true, "geminti has been "..(enabled and "enabled" or "disabled")
+		st:set_bool("geminti.enabled", enabled)
+		return true, "Geminti has been "..(enabled and "enabled" or "disabled")
 end})
 
 local callwords = {
@@ -89,11 +89,11 @@ local callwords = {
 	"^hello there!?$",
 	"^hi!?$",
 	"^привет!?$", "^Привет!?$",
-	(st:get("geminti.name") or "[AI] Geminti"):lower()
 }
 
 local function geminti_on_chat_msg(name, msg)
-	if not enabled or msg:sub(1,1) == "/" then return end
+	if not enabled then return end
+	msg = core.strip_colors(msg)
 	table.insert(chat, {
 		role = "user",
 		parts = {
@@ -103,9 +103,11 @@ local function geminti_on_chat_msg(name, msg)
 		}
 	})
 	local reply
-	local prefix = st:get("geminti_prefix") or "!"
+	local prefix = st:get("geminti_prefix") or ";"
 	if msg:match("^"..prefix.."%S+") then
 		msg = msg:sub(#prefix+1)
+		reply = true
+	elseif msg:match((st:get("geminti.name") or "Geminti"):lower()) then
 		reply = true
 	else
 		for _,word in ipairs(callwords) do
@@ -121,17 +123,42 @@ local function geminti_on_chat_msg(name, msg)
 				answer = answer:gsub("\n"," ")
 			end
 			local color = st:get("geminti_color") or "#aef"
-			core.chat_send_all(core.colorize(color, core.format_chat_message((st:get("geminti.name") or "[AI] Geminti"), answer)))
+			local name_prefix = st:get("geminti.name_prefix")
+			if name_prefix then
+				name_prefix = name_prefix.." "
+			else
+				name_prefix = "[AI] "
+			end
+			core.chat_send_all(core.colorize(color, core.format_chat_message((name_prefix..st:get("geminti.name") or "Geminti"), answer)))
 		end, true)
 	end
 end
 
 core.register_on_mods_loaded(function()
-	table.insert(core.registered_on_chat_messages, 1, geminti_on_chat_msg)
+	table.insert(core.registered_on_chat_messages, 1, function(name, msg)
+		if core.check_player_privs(name, "shout") and msg:sub(1,1) ~= "/" then
+			geminti_on_chat_msg(name, msg)
+		end
+	end)
 	core.callback_origins[geminti_on_chat_msg] = {
 		mod = "geminti",
 		name = "register_on_chat_message"
 	}
+	if core.get_modpath("discordmt") and core.global_exists("discord") then
+		discord.register_on_message(function(name, msg)
+			geminti_on_chat_msg(name.."@Discord", msg)
+		end)
+	end
+	if core.get_modpath("irc") and core.global_exists("irc") then
+		local old_sendLocal = irc.sendLocal
+		function irc.sendLocal(msg)
+			local name, message = msg:match("<(%S+)@IRC> .+")
+			if name and message then
+				geminti_on_chat_msg(name.."@IRC", message)
+			end
+			old_sendLocal(msg)
+		end
+	end
 end)
 
 local dd_helper = {
@@ -140,7 +167,6 @@ local dd_helper = {
 }
 
 local function geminti_chatedit(name)
-	if not next(chat) then return false, "Chat history is empty" end
 	local out = {}
 	for _, msg in ipairs(chat) do
 		table.insert(out, F(msg.role)..","..F(msg.parts[1].text):gsub("\n"," "))
@@ -148,8 +174,8 @@ local function geminti_chatedit(name)
 	core.show_formspec(name, "geminti_chatedit", "size[16,9]" ..
 		"tablecolumns[text;text]" ..
 		"table[0,0;15.8,6;msgs;"..table.concat(out,",")..";"..(selected_ids[name] or 1).."]" ..
-		"textarea[0.3,6.3;16,2;edit;;"..(selected_ids[name] and chat[selected_ids[name]].parts[1].text or "").."]" ..
-		"dropdown[0,8.1;1.5,1;role;user,model;"..(selected_ids[name] and dd_helper[chat[selected_ids[name]].role] or "0").."]" ..
+		"textarea[0.3,6.3;16,2;edit;;"..(selected_ids[name] and chat[selected_ids[name]] and chat[selected_ids[name]].parts[1].text or "").."]" ..
+		"dropdown[0,8.1;1.5,1;role;user,model;"..(selected_ids[name] and chat[selected_ids[name]] and dd_helper[chat[selected_ids[name]].role] or "0").."]" ..
 		"button[12,8;2,1;del;Delete]" ..
 		"button[14,8;2,1;save;Save]" ..
 		"button[3.7,8;2,1;moveup;Move up]" ..
@@ -178,10 +204,6 @@ core.register_on_player_receive_fields(function(player, fname, fields)
 	end
 	if fields.del then
 		table.remove(chat, sel)
-		if not next(chat) then
-			core.close_formspec(name, "geminti_chatedit")
-			return
-		end
 	end
 	if fields.moveup and sel > 1 then
 		chat[sel], chat[sel-1] = chat[sel-1], chat[sel]
