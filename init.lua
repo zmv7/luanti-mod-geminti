@@ -94,7 +94,7 @@ local callwords = {
 local function geminti_on_chat_msg(name, msg)
 	if not enabled then return end
 	msg = core.strip_colors(msg):trim()
-	if st:get("geminti.strip_urls") then
+	if st:get_bool("geminti.strip_urls", true) then
 		msg = msg:gsub("https?://%S+",""):trim()
 	end
 	if not msg or msg == "" then return end
