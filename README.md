@@ -13,6 +13,7 @@
 | `geminti.prefix` | Geminti chat prefix | ; |
 | `geminti.color` | Geminti responses color | #aef |
 | `geminti.newlines` | Allow newlines in Geminti responses | false |
+| `geminti.strip_urls` | Strip URLs in incoming messages | true |
 | `geminti.max_errors` | Maximum errors count before context(chat history) reset | 3 |
 | `geminti.system_prompt` | Geminti system prompt | You are in a multiuser chat. Messages follow the pattern '<username> message', where <username> is the sender's name and 'message' is their content. Do not use <username> prefix in your messages. |
 
