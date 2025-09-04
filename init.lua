@@ -156,7 +156,7 @@ core.register_on_mods_loaded(function()
 	if core.get_modpath("irc") and core.global_exists("irc") then
 		local old_sendLocal = irc.sendLocal
 		function irc.sendLocal(msg)
-			local name, message = msg:match("<(%S+)@IRC> .+")
+			local name, message = msg:match("<(%S+)@IRC> (.+)")
 			if name and message then
 				geminti_on_chat_msg(name.."@IRC", message)
 			end
